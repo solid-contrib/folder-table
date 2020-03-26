@@ -1,51 +1,20 @@
 /*   Folder pane
  **
- **  This outline pane lists the members of a folder
+ **  This folder table pane lists the members of a folder
  */
 
-var UI = require('solid-ui')
-var ns = UI.ns
+const UI = require('solid-ui')
+const ns = UI.ns
 
 module.exports = {
-  icon: UI.icons.iconBase + 'noun_973694_expanded.svg',
+  icon: UI.icons.iconBase + 'noun_897914.svg', // @@ That looks like a menu, better one with more lines
 
-  name: 'folder',
+  name: 'folderTable',
 
-  // Create a new folder in a Solid system,
-  mintNew: function (context, newPaneOptions) {
-    var kb = context.session.store
-    var newInstance =
-      newPaneOptions.newInstance || kb.sym(newPaneOptions.newBase)
-    var u = newInstance.uri
-    if (u.endsWith('/')) {
-      u = u.slice(0, -1) // chop off trailer
-    } // { throw new Error('URI of new folder must end in "/" :' + u) }
-    newPaneOptions.newInstance = kb.sym(u + '/')
-
-    // @@@@ kludge until we can get the solid-client version working
-    // Force the folder by saving a dummy file inside it
-    return kb.fetcher
-      .webOperation('PUT', newInstance.uri + '.dummy')
-      .then(function () {
-        console.log('New folder created: ' + newInstance.uri)
-
-        return kb.fetcher.delete(newInstance.uri + '.dummy')
-      })
-      .then(function () {
-        console.log('Dummy file deleted : ' + newInstance.uri + '.dummy')
-        /*
-        return kb.fetcher.createContainer(parentURI, folderName) // Not BOTH ways
-      })
-      .then(function () {
-*/
-        console.log('New container created: ' + newInstance.uri)
-        return newPaneOptions
-      })
-  },
-
+  // Note no mintNew, as the folderPane already has that functionality
   label: function (subject, context) {
-    var kb = context.session.store
-    var n = kb.each(subject, ns.ldp('contains')).length
+    const kb = context.session.store
+    const n = kb.each(subject, ns.ldp('contains')).length
     if (n > 0) {
       return 'Contents (' + n + ')' // Show how many in hover text
     }
@@ -59,38 +28,90 @@ module.exports = {
   // Render a file folder in a LDP/solid system
 
   render: function (subject, context) {
-    var dom = context.dom
-    var outliner = context.getOutliner(dom)
-    var kb = context.session.store
+    const dom = context.dom
+    const _outliner = context.getOutliner(dom)
+    const kb = context.session.store
     var mainTable // This is a live synced table
-    /*
-    var complain = function complain (message, color) {
-      var pre = dom.createElement('pre')
-      console.log(message)
-      pre.setAttribute('style', 'background-color: ' + color || '#eed' + ';')
-      div.appendChild(pre)
-      pre.appendChild(dom.createTextNode(message))
-    }
-*/
+
     var div = dom.createElement('div')
     div.setAttribute('class', 'instancePane')
     div.setAttribute(
       'style',
-      '  border-top: solid 1px #777; border-bottom: solid 1px #777; margin-top: 0.5em; margin-bottom: 0.5em '
+      'border-top: solid 1px #777; border-bottom: solid 1px #777; margin-top: 0.5em; margin-bottom: 0.5em ' // @@ to style.js
     )
 
     // If this is an LDP container just list the directory
 
-    var noHiddenFiles = function (obj) {
+    function noHiddenFiles (obj) {
       // @@ This hiddenness should actually be server defined
-      var pathEnd = obj.uri.slice(obj.dir().uri.length)
+      const pathEnd = obj.uri.slice(obj.dir().uri.length)
       return !(
         pathEnd.startsWith('.') ||
         pathEnd.endsWith('.acl') ||
         pathEnd.endsWith('~')
       )
     }
+
+    const userContext = {} // @@ add me, status area
+
+    async function navigateTo (y) {
+      try {
+        await kb.fetch.load(y)
+      } catch (err) {
+        // @@
+      }
+    }
+
+    function folderName (folder) {
+      const path = folder.uri.split('/').slice(3) // skip http, gap, domain
+      if (path === '/') return path
+      return path.split('/').slice(-2, 1) // last one is empty string
+    }
+
+    function renderBreadcrumb (x) {
+      const ele = dom.createElement('span')
+      ele.style = 'padding: 0.2em;'
+      ele.textContent = folderName(x)
+      ele.addEventListener('click', async _event => { navigateTo(x) })
+      ele.subject = x
+      return ele
+    }
+
+    var breadcrumbs
+    function refreshBreadcrumbs () {
+      var ancestors = []
+      for (var p = 0; p > 0; p = subject.uri.indexOf('/', p + 1)) {
+        ancestors.push(kb.sym(subject.uri.slice(p)))
+      }
+      UI.utils.syncTableToArray(breadcrumbs, ancestors, renderBreadcrumb)
+    }
+
+    function renderOneThing (object) {
+      function openToolBar () {
+        const toolBar = UI.messageToolbar(object, row, userContext) // social actions .. @@ make sure it generalizes
+        const _tr = row.parentElement.insertBefore(toolBar, row.nextSibling)
+      }
+
+      const row = dom.createElement('tr')
+      row.innerHTML = '<td><img /></td><td></td><td></td>'
+      UI.widgets.setImage(row.fistChid.firstChild, object) // @@ maybe loading each thing is not what you want
+      row.children[1].textContent = folderName(object)// After the slash
+      row.children[2].appendChild(UI.buttons.button(UI.icons.iconBase + 'noun_243787.svg', 'More', openToolBar))
+      row.subject = object
+      return row
+    }
+
+    function refreshTable () {
+      var objs = kb.each(subject, ns.ldp('contains')).filter(noHiddenFiles)
+      objs = objs.map(obj => [UI.utils.label(obj).toLowerCase(), obj])
+      objs.sort() // Sort by label case-insensitive
+      objs = objs.map(pair => pair[1])
+      UI.utils.syncTableToArray(mainTable, objs, renderOneThing)
+    }
+
     const thisDir = subject.uri.endsWith('/') ? subject.uri : subject.uri + '/'
+
+    // Is this directory actually a Package? If so display root object, not files
     const indexThing = kb.sym(thisDir + 'index.ttl#this')
     if (kb.holds(subject, ns.ldp('contains'), indexThing.doc())) {
       console.log(
@@ -104,30 +125,16 @@ module.exports = {
           .getOutliner(dom)
           .GotoSubject(indexThing, true, undefined, false, undefined, mainTable)
       })
-
       return div
-    } else {
+    } else { // Not a package
+      // @@ Add a breadcrumbs line
+      breadcrumbs = div.appendChild(dom.createElement('p')) // div? nav?
+      breadcrumbs.refresh = refreshBreadcrumbs
+      refreshBreadcrumbs()
+
       mainTable = div.appendChild(dom.createElement('table'))
-      var refresh = function () {
-        var objs = kb.each(subject, ns.ldp('contains')).filter(noHiddenFiles)
-        objs = objs.map(obj => [UI.utils.label(obj).toLowerCase(), obj])
-        objs.sort() // Sort by label case-insensitive
-        objs = objs.map(pair => pair[1])
-        UI.utils.syncTableToArray(mainTable, objs, function (obj) {
-          const st = kb.statementsMatching(subject, ns.ldp('contains'), obj)[0]
-          const defaultpropview = outliner.VIEWAS_boring_default
-          const tr = outliner.propertyTR(dom, st, false)
-          tr.firstChild.textContent = '' // Was initialized to 'Contains'
-          tr.firstChild.style.cssText += 'min-width: 3em;'
-          tr.appendChild(
-            outliner.outlineObjectTD(obj, defaultpropview, undefined, st)
-          )
-          // UI.widgets.makeDraggable(tr, obj)
-          return tr
-        })
-      }
-      mainTable.refresh = refresh
-      refresh()
+      mainTable.refresh = refreshTable
+      refreshTable()
     }
 
     // Allow user to create new things within the folder
