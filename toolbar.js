@@ -69,7 +69,7 @@ emoji[ns.schema('LikeAction')] = '❤️'
 /**
  * Create strip of sentiments expressed
  */
- /* exported sentimentStrip */
+/* exported sentimentStrip */
 export function sentimentStrip (target, doc) {
   const actions = kb.each(null, ns.schema('target'), target, doc)
   const sentiments = actions.map(a => kb.any(a, ns.rdf('type'), null, doc))
@@ -83,7 +83,7 @@ export function sentimentStrip (target, doc) {
  * @param target {NamedNode} - The thing about which they are expressed
  * @param doc {NamedNode} - The document in which they are expressed
  */
- /* exported sentimentStripLinked */
+/* exported sentimentStripLinked */
 export function sentimentStripLinked (target, doc) {
   var strip = dom.createElement('span')
   function refresh () {

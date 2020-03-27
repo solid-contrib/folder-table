@@ -3,7 +3,7 @@
  **  This folder table pane lists the members of a folder
  */
 
-import * as  UI from 'solid-ui'
+import * as UI from 'solid-ui'
 import { sentimentStrip, sentimentStripLinked, actionToolbar } from './toolbar'
 
 const ns = UI.ns
