@@ -1,9 +1,11 @@
-/*   Folder pane
+/*   Folder pane - Table version
  **
  **  This folder table pane lists the members of a folder
  */
 
-const UI = require('solid-ui')
+import * as  UI from 'solid-ui'
+import { sentimentStrip, sentimentStripLinked, actionToolbar } from './toolbar'
+
 const ns = UI.ns
 
 module.exports = {
@@ -64,8 +66,8 @@ module.exports = {
 
     function folderName (folder) {
       const path = folder.uri.split('/').slice(3) // skip http, gap, domain
-      if (path === '/') return path
-      return path.split('/').slice(-2, 1) // last one is empty string
+      if (path.length === 0) return '/'
+      return decodeURIComponent(path.slice(-2)[0]) // last one is empty string
     }
 
     function renderBreadcrumb (x) {
@@ -86,18 +88,79 @@ module.exports = {
       UI.utils.syncTableToArray(breadcrumbs, ancestors, renderBreadcrumb)
     }
 
-    function renderOneThing (object) {
-      function openToolBar () {
-        const toolBar = UI.messageToolbar(object, row, userContext) // social actions .. @@ make sure it generalizes
-        const _tr = row.parentElement.insertBefore(toolBar, row.nextSibling)
-      }
+    // Make the pieces fopr the main table row
 
+    function renderIconCell (object, imageURI) {
+      const cell = dom.createElement('td')
+      cell.style = 'vertical-align: middle;'
+      const icon = cell.appendChild(dom.createElement('img'))
+      icon.setAttribute('src', imageURI)
+      icon.style = UI.style.iconStyle
+      // UI.widgets.setImage(icon, object) // @@ maybe loading each thing is not what you want
+      return cell
+    }
+
+    function renderCell (object, text) {
+      const cell = dom.createElement('td')
+      cell.style = 'vertical-align: middle;'
+      cell.textContent = text
+      return cell
+    }
+
+    function renderTypeCell (object) {
+      // @@ Make icon from resource type
+      var iconURI
+      if (kb.holds(object, ns.rdf('type'), ns.ldp('Container'))) {
+        iconURI = UI.icons.iconBase + 'noun_973694_expanded.svg'
+      } else {
+        iconURI = UI.icons.iconBase + 'noun_681601.svg'
+      }
+      return renderIconCell(object, iconURI)
+    }
+
+    function renderNameCell (object) {
+      const cell = dom.createElement('td')
+      cell.style = 'vertical-align: middle;'
+      const anchor = cell.appendChild(dom.createElement('a'))
+      anchor.textContent = folderName(object)// After the slash
+      anchor.setAttribute('href', object.uri)
+      anchor.addEventListener('click', async _event => navigateTo(object))
+      return cell
+    }
+
+    function renderSizeCell (object) {
+      const size = kb.anyJS(object, ns.stat('size')) // @@ Express in kmGTP
+      return renderCell(object, size)
+    }
+
+    function renderDateCell (object) {
+      const date = kb.anyValue(object, ns.dct('modified'))
+      const text = UI.widgets.shortDate(date)
+      return renderCell(object, text)
+    }
+
+    function openToolBar (object, row) {
+      const toolBar = UI.messageToolbar(object, row, userContext) // social actions .. @@ make sure it generalizes
+      const _tr = row.parentElement.insertBefore(toolBar, row.nextSibling)
+    }
+
+    function renderMenuCell (object, row) {
+      const cell = dom.createElement('td')
+      cell.style = 'vertical-align: middle;'
+      cell.appendChild(UI.widgets.button(dom,
+        UI.icons.iconBase + 'noun_243787.svg',
+        'More',
+        async _event => openToolBar(object, row)))
+      return cell
+    }
+
+    function renderOneRow (object) {
       const row = dom.createElement('tr')
-      row.innerHTML = '<td><img /></td><td></td><td></td>'
-      UI.widgets.setImage(row.fistChid.firstChild, object) // @@ maybe loading each thing is not what you want
-      row.children[1].textContent = folderName(object)// After the slash
-      row.children[2].appendChild(UI.buttons.button(UI.icons.iconBase + 'noun_243787.svg', 'More', openToolBar))
-      row.subject = object
+      row.appendChild(renderTypeCell(object))
+      row.appendChild(renderNameCell(object))
+      row.appendChild(renderDateCell(object))
+      row.appendChild(renderSizeCell(object))
+      row.appendChild(renderMenuCell(object, row))
       return row
     }
 
@@ -106,7 +169,7 @@ module.exports = {
       objs = objs.map(obj => [UI.utils.label(obj).toLowerCase(), obj])
       objs.sort() // Sort by label case-insensitive
       objs = objs.map(pair => pair[1])
-      UI.utils.syncTableToArray(mainTable, objs, renderOneThing)
+      UI.utils.syncTableToArray(mainTable, objs, renderOneRow)
     }
 
     const thisDir = subject.uri.endsWith('/') ? subject.uri : subject.uri + '/'
@@ -133,6 +196,7 @@ module.exports = {
       refreshBreadcrumbs()
 
       mainTable = div.appendChild(dom.createElement('table'))
+      mainTable.style = 'margin: 1em; width: 100%; font-size: 120%; ' // @@ compensate for 80% in tabbedtab.css
       mainTable.refresh = refreshTable
       refreshTable()
     }
