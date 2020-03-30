@@ -69,7 +69,6 @@ emoji[ns.schema('LikeAction')] = '❤️'
 /**
  * Create strip of sentiments expressed
  */
-/* exported sentimentStrip */
 export function sentimentStrip (target, doc) {
   const actions = kb.each(null, ns.schema('target'), target, doc)
   const sentiments = actions.map(a => kb.any(a, ns.rdf('type'), null, doc))
@@ -83,7 +82,6 @@ export function sentimentStrip (target, doc) {
  * @param target {NamedNode} - The thing about which they are expressed
  * @param doc {NamedNode} - The document in which they are expressed
  */
-/* exported sentimentStripLinked */
 export function sentimentStripLinked (target, doc) {
   var strip = dom.createElement('span')
   function refresh () {
@@ -115,7 +113,6 @@ export function sentimentStripLinked (target, doc) {
 /**
  * Creates a message toolbar component
  */
-/* exported actionToolbar */
 export function actionToolbar (message, messageRow, userContext) { // was: messageToolbar
   const div = dom.createElement('div')
   function closeToolbar () {
@@ -181,9 +178,9 @@ export function actionToolbar (message, messageRow, userContext) { // was: messa
           // no action
           action = UI.widgets.newThing(doc)
           var insertMe = [
-            kb.st(action, ns.schema('agent'), context.me, doc),
-            kb.st(action, ns.rdf('type'), actionClass, doc),
-            kb.st(action, ns.schema('target'), target, doc)
+            kb.quad(action, ns.schema('agent'), context.me, doc),
+            kb.quad(action, ns.rdf('type'), actionClass, doc),
+            kb.quad(action, ns.schema('target'), target, doc)
           ]
           await updatePromise([], insertMe)
           setColor()

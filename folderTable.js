@@ -8,7 +8,7 @@ import { sentimentStrip, sentimentStripLinked, actionToolbar } from './toolbar'
 
 const ns = UI.ns
 
-module.exports = {
+export default {
   icon: UI.icons.iconBase + 'noun_897914.svg', // @@ That looks like a menu, better one with more lines
 
   name: 'folderTable',
@@ -31,7 +31,6 @@ module.exports = {
 
   render: function (subject, context) {
     const dom = context.dom
-    const _outliner = context.getOutliner(dom)
     const kb = context.session.store
     var mainTable // This is a live synced table
 
@@ -41,8 +40,6 @@ module.exports = {
       'style',
       'border-top: solid 1px #777; border-bottom: solid 1px #777; margin-top: 0.5em; margin-bottom: 0.5em ' // @@ to style.js
     )
-
-    // If this is an LDP container just list the directory
 
     function noHiddenFiles (obj) {
       // @@ This hiddenness should actually be server defined
@@ -54,27 +51,34 @@ module.exports = {
       )
     }
 
-    const userContext = {} // @@ add me, status area
-
-    async function navigateTo (y) {
+    async function navigateTo (x) {
       try {
-        await kb.fetch.load(y)
+        console.log('navigateto: loading ' + x)
+        await kb.fetcher.load(x)
       } catch (err) {
-        // @@
+        // complain(err)
+        alert(err) //
       }
+      subject = x
+      refreshTable()
+      refreshBreadcrumbs()
+      console.log('Navigated to ' + subject)
+      // @@ add hisory
+      // window.location.href = y.uri // beware will cause jumo if diff origin
     }
 
     function folderName (folder) {
-      const path = folder.uri.split('/').slice(3) // skip http, gap, domain
-      if (path.length === 0) return '/'
-      return decodeURIComponent(path.slice(-2)[0]) // last one is empty string
+      var path = folder.uri.split('/').slice(3) // skip http, gap, domain
+      // if (path.length === 0) return '/'
+      path = path.reverse()
+      return decodeURIComponent(path[0] || path[1] || ' / ')
     }
 
     function renderBreadcrumb (x) {
-      const ele = dom.createElement('span')
-      ele.style = 'padding: 0.2em;'
+      const ele = dom.createElement('li') // 20200330b
+      ele.style = 'display: inline; margin: 0.4em; padding: 0.2em; background-color: #ddd; border-radius: 0.2em;'
       ele.textContent = folderName(x)
-      ele.addEventListener('click', async _event => { navigateTo(x) })
+      ele.addEventListener('click', async _event => navigateTo(x))
       ele.subject = x
       return ele
     }
@@ -82,10 +86,13 @@ module.exports = {
     var breadcrumbs
     function refreshBreadcrumbs () {
       var ancestors = []
-      for (var p = 0; p > 0; p = subject.uri.indexOf('/', p + 1)) {
-        ancestors.push(kb.sym(subject.uri.slice(p)))
+      const uri = subject.uri
+      var p = uri.indexOf('//') + 2
+      p = uri.indexOf('/', p)
+      for (p; p > 0; p = uri.indexOf('/', p + 1)) {
+        ancestors.push(kb.sym(subject.uri.slice(0, p + 1)))
       }
-      UI.utils.syncTableToArray(breadcrumbs, ancestors, renderBreadcrumb)
+      UI.utils.syncTableToArrayReOrdered(breadcrumbs, ancestors, renderBreadcrumb)
     }
 
     // Make the pieces fopr the main table row
@@ -140,8 +147,10 @@ module.exports = {
     }
 
     function openToolBar (object, row) {
-      const toolBar = UI.messageToolbar(object, row, userContext) // social actions .. @@ make sure it generalizes
-      const _tr = row.parentElement.insertBefore(toolBar, row.nextSibling)
+      const newRow = dom.createElement('tr')
+      newRow.decoration = true // don't mess up sync of table
+      actionToolbar(object, newRow, userContext) // social actions .. @@ make sure it generalizes
+      row.parentElement.insertBefore(newRow, row.nextSibling)
     }
 
     function renderMenuCell (object, row) {
@@ -164,15 +173,19 @@ module.exports = {
       return row
     }
 
-    function refreshTable () {
+    async function refreshTable () {
       var objs = kb.each(subject, ns.ldp('contains')).filter(noHiddenFiles)
+      console.log('   ' + objs.length + ' contained things in ' + subject)
       objs = objs.map(obj => [UI.utils.label(obj).toLowerCase(), obj])
       objs.sort() // Sort by label case-insensitive
       objs = objs.map(pair => pair[1])
-      UI.utils.syncTableToArray(mainTable, objs, renderOneRow)
+      UI.utils.syncTableToArrayReOrdered(mainTable, objs, renderOneRow)
     }
 
-    const thisDir = subject.uri.endsWith('/') ? subject.uri : subject.uri + '/'
+    var thisDir = subject.uri.endsWith('/') ? subject.uri : subject.uri + '/'
+    var userContext = {} // @@ add me, status area
+
+    // @@ add response to external login
 
     // Is this directory actually a Package? If so display root object, not files
     const indexThing = kb.sym(thisDir + 'index.ttl#this')
@@ -189,17 +202,19 @@ module.exports = {
           .GotoSubject(indexThing, true, undefined, false, undefined, mainTable)
       })
       return div
-    } else { // Not a package
-      // @@ Add a breadcrumbs line
-      breadcrumbs = div.appendChild(dom.createElement('p')) // div? nav?
-      breadcrumbs.refresh = refreshBreadcrumbs
-      refreshBreadcrumbs()
-
-      mainTable = div.appendChild(dom.createElement('table'))
-      mainTable.style = 'margin: 1em; width: 100%; font-size: 120%; ' // @@ compensate for 80% in tabbedtab.css
-      mainTable.refresh = refreshTable
-      refreshTable()
     }
+
+    // Add a breadcrumbs line
+    const breadcrumbsNav = div.appendChild(dom.createElement('nav')) // div? nav?
+    breadcrumbs = breadcrumbsNav.appendChild(dom.createElement('ol')) // div? nav?
+    breadcrumbs.style = 'flex-flow: column wrap; font-size: 120%; color: #222; margin: 0.5em 1em 0.5em 2em;' //  T R B L
+    breadcrumbs.refresh = refreshBreadcrumbs
+    refreshBreadcrumbs()
+
+    mainTable = div.appendChild(dom.createElement('table'))
+    mainTable.style = 'margin: 1em; width: 100%; font-size: 120%; ' // @@ compensate for 80% in tabbedtab.css
+    mainTable.refresh = refreshTable
+    refreshTable()
 
     // Allow user to create new things within the folder
     var creationDiv = div.appendChild(dom.createElement('div'))
