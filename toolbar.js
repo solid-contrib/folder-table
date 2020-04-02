@@ -1,5 +1,5 @@
 /**
- * Tools for doing things with a message, file, ... anything
+ * Tools for doing things with a target: a message, file, ... anything
  * Let us be creative here.  Allow all sorts of things to
  * be done to a  - linking to new or old objects in an open way
  *
@@ -28,6 +28,8 @@ const bookmarks = require('./bookmarks')
 
 const dom = window.document
 
+export const toolBarForRow = Symbol('toolBarForRow') // use for safe poperties on fireign objects
+
 const kb = UI.store
 const ns = UI.ns
 // const label = UI.utils.label
@@ -42,19 +44,11 @@ const ns = UI.ns
 // const SPANNER_ICON = 'noun_344563.svg' -> settings
 const THUMBS_UP_ICON = 'noun_1384132.svg'
 const THUMBS_DOWN_ICON = 'noun_1384135.svg'
-
-// @@@@ use the one in rdflib.js when it is avaiable and delete this
-function updatePromise (del, ins) {
-  return new Promise(function (resolve, reject) {
-    kb.updater.update(del, ins, function (uri, ok, errorBody) {
-      if (!ok) {
-        reject(new Error(errorBody))
-      } else {
-        resolve()
-      }
-    }) // callback
-  }) // promise
-}
+const ISSUE_ICON = 'noun_Danger_1259514.svg' // Something like following github
+// const GROUP_ICON = 'noun_339237.svg'
+// const HASH_ICON = 'noun_Hash_2457016.svg' // '#' sign
+const MENTION_ICON = 'noun_mention_3203461.svg' // '@' sign
+// const TAG_ICON = 'noun_Tag_3235488.svg' // Luggage tag for keyword tagging
 
 /**
  * Emoji in Unicode
@@ -65,6 +59,14 @@ emoji[ns.schema('AgreeAction')] = '👍'
 emoji[ns.schema('DisagreeAction')] = '👎'
 emoji[ns.schema('EndorseAction')] = '⭐️'
 emoji[ns.schema('LikeAction')] = '❤️'
+
+async function deleteThingThen (x) {
+  try {
+    await kb.updater.update(kb.connectedStatements(x), [])
+  } catch (err) {
+    // @@ complain
+  }
+}
 
 /**
  * Create strip of sentiments expressed
@@ -110,29 +112,111 @@ export function sentimentStripLinked (target, doc) {
   return strip
 }
 
-/**
- * Creates a message toolbar component
+/**   Button to allow user to express a sentiment (like, endorse, etc) about a target
+ *
+ * @param context {Object} - Provide dom and me
+ * @param target {NamedNode} - The thing the user expresses an opnion about
+ * @param icon {uristring} - The icon to be used for the button
+ * @param actionClass {NamedNode} - The RDF class  - typically a subclass of schema:Action
+ * @param doc - {NamedNode} - the Solid document iunto which the data should be written
+ * @param mutuallyExclusive {Array<NamedNode>} - Any RDF classes of sentimentswhich are mutiually exclusive
  */
-export function actionToolbar (message, messageRow, userContext) { // was: messageToolbar
+export function renderSentimentButton (
+  context,
+  target,
+  refreshRow,
+  icon,
+  actionClass,
+  doc,
+  mutuallyExclusive
+) {
+  function setColor () {
+    button.style.backgroundColor = action ? 'yellow' : 'white'
+  }
+  var button = UI.widgets.button(
+    dom,
+    icon,
+    UI.utils.label(actionClass),
+    async function (_event) {
+      if (action) {
+        await deleteThingThen(action)
+        action = null
+        setColor()
+      } else {
+        // no action
+        action = UI.widgets.newThing(doc)
+        var insertMe = [
+          kb.quad(action, ns.schema('agent'), context.me, doc),
+          kb.quad(action, ns.rdf('type'), actionClass, doc),
+          kb.quad(action, ns.schema('target'), target, doc)
+        ]
+        await kb.updater.update([], insertMe)
+        setColor()
+
+        if (mutuallyExclusive) {
+          // Delete incompative sentiments
+          var dirty = false
+          for (let i = 0; i < mutuallyExclusive.length; i++) {
+            const a = existingAction(mutuallyExclusive[i])
+            if (a) {
+              await deleteThingThen(a) // but how refresh? refreshTree the parent?
+              dirty = true
+            }
+          }
+          if (dirty) {
+            // UI.widgets.refreshTree(button.parentNode) // requires them all to be immediate siblings
+            UI.widgets.refreshTree(refreshRow) // requires them all to be immediate siblings
+          }
+        }
+      }
+    }
+  )
+  function existingAction (actionClass) {
+    var actions = kb
+      .each(null, ns.schema('agent'), context.me, doc)
+      .filter(x => kb.holds(x, ns.rdf('type'), actionClass, doc))
+      .filter(x => kb.holds(x, ns.schema('target'), target, doc))
+    return actions.length ? actions[0] : null
+  }
+  function refresh () {
+    action = existingAction(actionClass)
+    setColor()
+  }
+  var action
+  button.refresh = refresh // If the file changes, refresh live
+  refresh()
+  return button
+}
+
+/**
+ * Creates a social action toolbar component below a row about the target
+ */
+export function actionToolbar (target, messageRow, userContext) { // was: messageToolbar
+  const actionDoc = userContext.actionDoc
+  if (!actionDoc) throw new Error('Toolbar: nowhere to store stuff')
+  const refreshRow = userContext.refreshRow
+  if (!refreshRow) throw new Error('Toolbar: no refreshRow')
+
+  const noun = userContext.noun || 'thing'
+  if (messageRow[toolBarForRow]) {
+    console.log('Alredy have tool bar here.')
+    return null
+  }
   const div = dom.createElement('div')
+  messageRow[toolBarForRow] = div
   function closeToolbar () {
-    div.parentElement.parentElement.removeChild(div.parentElement) // remive the TR
+    messageRow[toolBarForRow] = null
+    div.parentElement.removeChild(div)
   }
 
-  async function deleteThingThen (x) {
-    await updatePromise(kb.connectedStatements(x), [])
-  }
-
-  // Things only the original author can do
-  let me = UI.authn.currentUser() // If already logged on
-  if (me && kb.holds(message, ns.foaf('maker'), me)) {
-    // button to delete the message
+  if (userContext.deleteFunction) {
+    // button to delete the target
     const deleteButton = UI.widgets.deleteButtonWithCheck(
       dom,
       div,
-      'message',
+      noun,
       async function () {
-        await kb.updater.update(kb.connectedStatements[message], [])
+        await userContext.deleteFunction()
         closeToolbar()
       }
     )
@@ -145,109 +229,64 @@ export function actionToolbar (message, messageRow, userContext) { // was: messa
     if (bookmarkButton) div.appendChild(bookmarkButton)
   })
 
-  /**   Button to allow user to express a sentiment (like, endorse, etc) about a target
-   *
-   * @param context {Object} - Provide dom and me
-   * @param target {NamedNode} - The thing the user expresses an opnion about
-   * @param icon {uristring} - The icon to be used for the button
-   * @param actionClass {NamedNode} - The RDF class  - typically a subclass of schema:Action
-   * @param doc - {NamedNode} - the Solid document iunto which the data should be written
-   * @param mutuallyExclusive {Array<NamedNode>} - Any RDF classes of sentimentswhich are mutiually exclusive
-   */
-  function sentimentButton (
-    context,
-    target,
-    icon,
-    actionClass,
-    doc,
-    mutuallyExclusive
-  ) {
-    function setColor () {
-      button.style.backgroundColor = action ? 'yellow' : 'white'
-    }
-    var button = UI.widgets.button(
-      dom,
-      icon,
-      UI.utils.label(actionClass),
-      async function (_event) {
-        if (action) {
-          await deleteThingThen(action)
-          action = null
-          setColor()
-        } else {
-          // no action
-          action = UI.widgets.newThing(doc)
-          var insertMe = [
-            kb.quad(action, ns.schema('agent'), context.me, doc),
-            kb.quad(action, ns.rdf('type'), actionClass, doc),
-            kb.quad(action, ns.schema('target'), target, doc)
-          ]
-          await updatePromise([], insertMe)
-          setColor()
-
-          if (mutuallyExclusive) {
-            // Delete incompative sentiments
-            var dirty = false
-            for (let i = 0; i < mutuallyExclusive.length; i++) {
-              const a = existingAction(mutuallyExclusive[i])
-              if (a) {
-                await deleteThingThen(a) // but how refresh? refreshTree the parent?
-                dirty = true
-              }
-            }
-            if (dirty) {
-              // UI.widgets.refreshTree(button.parentNode) // requires them all to be immediate siblings
-              UI.widgets.refreshTree(messageRow) // requires them all to be immediate siblings
-            }
-          }
-        }
-      }
-    )
-    function existingAction (actionClass) {
-      var actions = kb
-        .each(null, ns.schema('agent'), context.me, doc)
-        .filter(x => kb.holds(x, ns.rdf('type'), actionClass, doc))
-        .filter(x => kb.holds(x, ns.schema('target'), target, doc))
-      return actions.length ? actions[0] : null
-    }
-    function refresh () {
-      action = existingAction(actionClass)
-      setColor()
-    }
-    var action
-    button.refresh = refresh // If the file changes, refresh live
-    refresh()
-    return button
-  }
-
   // THUMBS_UP_ICON
   // https://schema.org/AgreeAction
-  me = UI.authn.currentUser() // If already logged on
+  var me = UI.authn.currentUser() // If already logged on
   if (me) {
     // Things you mnust be logged in for
     var context1 = { me, dom, div }
     div.appendChild(
-      sentimentButton(
+      renderSentimentButton(
         context1,
-        message, // @@ TODO use UI.widgets.sentimentButton
+        target, // @@ TODO use UI.widgets.renderSentimentButton
+        refreshRow,
         UI.icons.iconBase + THUMBS_UP_ICON,
         ns.schema('AgreeAction'),
-        message.doc(),
+        actionDoc,
         [ns.schema('DisagreeAction')]
       )
     )
     // Thumbs down
     div.appendChild(
-      sentimentButton(
+      renderSentimentButton(
         context1,
-        message,
+        target,
+        refreshRow,
         UI.icons.iconBase + THUMBS_DOWN_ICON,
         ns.schema('DisagreeAction'),
-        message.doc(),
+        actionDoc,
         [ns.schema('AgreeAction')]
       )
     )
   }
+
+  // Issue tracker? Make this an issue
+  // ToDo: call out to issue tracker code for form for new issue
+  if (userContext.issueTracker) {
+    const tracker = userContext.issueTracker
+    div.appendChild(renderSentimentButton(
+      context1,
+      target,
+      refreshRow,
+      UI.icons.iconBase + ISSUE_ICON,
+      kb.the(tracker, ns.wf('issueClass')),
+      kb.the(tracker, ns.wf('stateStore')),
+      []
+    )
+    )
+  }
+  // At-mention people
+  if (userContext.group) {
+    div.appendChild(UI.widgets.button(dom, UI.icons.iconBase + MENTION_ICON, 'poke', _event => {
+      // @@ write me code to select people,
+      // @@ use the people picker to pick people to poke
+      // - add a linked text string to the message if it is a message,
+      // Send the  a soldi notification that they have booen at-menioned (poked) about the target
+      //
+      refreshRow.refresh()
+    }))
+  }
+
   // X button to remove the tool UI itself
   const cancelButton = div.appendChild(UI.widgets.cancelButton(dom))
   cancelButton.style.float = 'right'
