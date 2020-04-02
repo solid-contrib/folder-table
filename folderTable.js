@@ -104,6 +104,7 @@ export default {
       ele.addEventListener('click', async _event => navigateTo(folder))
       ele.textContent = folderName(folder)
       ele.subject = folder
+      UI.widgets.makeDraggable(ele, folder) // handy to be able to drag them
       return ele
     }
 
@@ -207,6 +208,7 @@ export default {
         deleteFunction: () => deleteResource(object),
         noun: fileOrFolder(object),
         actionDoc: getActionDoc(subject),
+        refreshRow: row,
         div: div
       } // @@ add me, status area
 
@@ -298,10 +300,9 @@ export default {
       }
       refreshBreadcrumbs()
 
-      const old = creationDiv // Need a new Creation control
+      div.removeChild(creationDiv)
       creationDiv = renderCreationControl(subject)
-      div.insertBefore(creationDiv, old)
-      div.removeChild(old)
+      div.appendChild(creationDiv) // add on the end
     }
 
     // Allow user to create new things within the folder

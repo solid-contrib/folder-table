@@ -163,7 +163,7 @@ export function renderSentimentButton (
               dirty = true
             }
           }
-          if (dirty) {
+          if (dirty && refreshRow) {
             // UI.widgets.refreshTree(button.parentNode) // requires them all to be immediate siblings
             UI.widgets.refreshTree(refreshRow) // requires them all to be immediate siblings
           }
@@ -195,7 +195,7 @@ export function actionToolbar (target, messageRow, userContext) { // was: messag
   const actionDoc = userContext.actionDoc
   if (!actionDoc) throw new Error('Toolbar: nowhere to store stuff')
   const refreshRow = userContext.refreshRow
-  if (!refreshRow) throw new Error('Toolbar: no refreshRow')
+  // if (!refreshRow) throw new Error('Toolbar: no refreshRow')
 
   const noun = userContext.noun || 'thing'
   if (messageRow[toolBarForRow]) {
@@ -283,7 +283,9 @@ export function actionToolbar (target, messageRow, userContext) { // was: messag
       // - add a linked text string to the message if it is a message,
       // Send the  a soldi notification that they have booen at-menioned (poked) about the target
       //
-      refreshRow.refresh()
+      if (refreshRow) {
+        UI.widgets.refreshTree(refreshRow) // requires them all to be immediate siblings
+      }
     }))
   }
 
