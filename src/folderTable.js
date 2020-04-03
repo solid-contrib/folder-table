@@ -318,7 +318,7 @@ export default {
       }
       creationContext.refreshTarget = mainTable
       UI.authn
-        .filterAvailablePanes(context.session.paneRegistry.list)
+        .filterAvailablePanes([]) // context.session.paneRegistry.list)
         .then(function (relevantPanes) {
           UI.create.newThingUI(creationContext, context, relevantPanes) // Have to pass panes down  newUI
 
