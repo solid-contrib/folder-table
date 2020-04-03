@@ -116,7 +116,9 @@ export default {
       for (p; p > 0; p = uri.indexOf('/', p + 1)) {
         ancestors.push(kb.sym(subject.uri.slice(0, p + 1)))
       }
-      UI.utils.syncTableToArrayReOrdered(breadcrumbs, ancestors, renderBreadcrumb)
+      // FIXME:
+      // UI.utils.syncTableToArrayReOrdered(breadcrumbs, ancestors, renderBreadcrumb)
+      UI.utils.syncTableToArray(breadcrumbs, ancestors, renderBreadcrumb)
       const crumbs = breadcrumbs.children
       for (var i = 0; i < crumbs.length; i++) {
         if (i !== crumbs.length - 1) {
@@ -318,7 +320,9 @@ export default {
       }
       creationContext.refreshTarget = mainTable
       UI.authn
-        .filterAvailablePanes([]) // context.session.paneRegistry.list)
+      // FIXME:
+      // .filterAvailablePanes(context.session.paneRegistry.list)
+        .filterAvailablePanes([])
         .then(function (relevantPanes) {
           UI.create.newThingUI(creationContext, context, relevantPanes) // Have to pass panes down  newUI
 
