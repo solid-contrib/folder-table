@@ -7,7 +7,7 @@ module.exports = [{
   entry: './src/index.js',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'meeting.bundle.js'
+    filename: 'foldertable.bundle.js'
   },
   plugins: [
     new HtmlWebpackPlugin({ template: './src/index.html' })
@@ -28,10 +28,10 @@ module.exports = [{
 },
 {
   mode: 'development',
-  entry: './src/meetingPane.js',
+  entry: './src/folderTable.js',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'meetingPane.js'
+    filename: 'folderTable.js'
   },
   externals: {
     fs: 'null',
