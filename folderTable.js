@@ -88,6 +88,15 @@ export default {
       }
     }
 
+    async function loadActionDocumentIfAny () {
+      try {
+        await kb.fetcher.load(getActionDoc(subject))
+      } catch (error) {
+        if (error.status !== 404) {
+          UI.widgets.complain(userContext, 'can\'t read action data: ' + error)
+        }
+      }
+    }
     function folderName (folder) {
       var path = folder.uri.split('/').slice(3) // skip http, gap, domain
       // if (path.length === 0) return '/'
@@ -202,19 +211,19 @@ export default {
       refreshTable()
     }
 
-    function openToolBar (object, row) {
+    async function openToolBar (object, row) {
       // Put metadata in one file for the whole folder for now
-      var userContext = {
+      var toolbarContext = {
         deleteFunction: () => deleteResource(object),
         noun: fileOrFolder(object),
         actionDoc: getActionDoc(subject),
         refreshRow: row,
         div: div
       } // @@ add me, status area
-
-      const toolbar = actionToolbar(object, row, userContext)
+      await loadActionDocumentIfAny()
+      const toolbar = actionToolbar(object, row, toolbarContext)
       if (!toolbar) return // already have one
-      // row.style.position = 'relative' // to make an anchor
+      // row.style.position = 'relative' // to make an anchor - no doesn't work
       const cell = row.children[1]
       cell.style.position = 'relative'
       toolbar.style = 'position: absolute; top: 2em; left: 0; height:4em; width: 30em; border: 0 0.1 0.1 0.1 solid grey; border-radius: 0.1em; background-color: #eef; '
@@ -364,7 +373,10 @@ export default {
     /* Body of render
     */
     var div = dom.createElement('div')
+    loadActionDocumentIfAny()
     var mainTable = null // Holds the file list when the thing is a file list
+    const statusArea = div.appendChild(dom.createElement('div'))
+    const userContext = { dom, div, statusArea }
     var creationDiv = renderCreationControl(subject)
     div.appendChild(creationDiv)
 
