@@ -48,6 +48,7 @@ const ISSUE_ICON = 'noun_Danger_1259514.svg' // Something like following github
 // const GROUP_ICON = 'noun_339237.svg'
 // const HASH_ICON = 'noun_Hash_2457016.svg' // '#' sign
 const MENTION_ICON = 'noun_mention_3203461.svg' // '@' sign
+const COPY_ICON = 'noun_copy_2018813.svg' // Copy to clipbaord
 // const TAG_ICON = 'noun_Tag_3235488.svg' // Luggage tag for keyword tagging
 
 /**
@@ -60,11 +61,11 @@ emoji[ns.schema('DisagreeAction')] = '👎'
 emoji[ns.schema('EndorseAction')] = '⭐️'
 emoji[ns.schema('LikeAction')] = '❤️'
 
-async function deleteThingThen (x) {
+async function deleteThingThen (x, context) {
   try {
     await kb.updater.update(kb.connectedStatements(x), [])
   } catch (err) {
-    // @@ complain
+    UI.widgets.complain(context, 'Error deleting: ' + err)
   }
 }
 
@@ -139,7 +140,7 @@ export function renderSentimentButton (
     UI.utils.label(actionClass),
     async function (_event) {
       if (action) {
-        await deleteThingThen(action)
+        await deleteThingThen(action, context)
         action = null
         setColor()
       } else {
@@ -159,7 +160,7 @@ export function renderSentimentButton (
           for (let i = 0; i < mutuallyExclusive.length; i++) {
             const a = existingAction(mutuallyExclusive[i])
             if (a) {
-              await deleteThingThen(a) // but how refresh? refreshTree the parent?
+              await deleteThingThen(a, context) // but how refresh? refreshTree the parent?
               dirty = true
             }
           }
@@ -207,6 +208,20 @@ export function actionToolbar (target, messageRow, userContext) { // was: messag
   function closeToolbar () {
     messageRow[toolBarForRow] = null
     div.parentElement.removeChild(div)
+  }
+
+  /// / Button: Copy URI of target to clipbaord
+  if (target.uri) { // Ie not blank nodes or numbers
+    div.appendChild(UI.widgets.button(dom, UI.icons.iconBase + COPY_ICON, 'copy', async _event => {
+      const data = new DataTransfer()
+      data.items.add(target.uri, 'text/plain')
+      data.items.add(target.uri, 'text/uri-list')
+      try {
+        await navigator.clipboard.write(data)
+      } catch (err) {
+        UI.widgets.complain(userContext, 'Error copyimg to clipboard: ' + err)
+      }
+    }))
   }
 
   if (userContext.deleteFunction) {

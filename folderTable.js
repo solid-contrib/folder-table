@@ -10,6 +10,7 @@ const ns = UI.ns
 const PANE_NAME = 'folderTable'
 
 const style = { // @@ move to style.js
+  paneDivStyle: 'border-top: solid 1px #777; border-bottom: solid 1px #777; margin: 0.5em;',
   iconStyle: 'width: 3em; height: 3em; margin: 0.1em; border-radius: 1em;',
   smallIconStyle: 'width: 2em; height: 2em; margin: 0.1em; border-radius: 0.5em;',
   // below we have own to reduce padding from 0.7em
@@ -68,8 +69,6 @@ export default {
       }
       subject = destination
       refresh()
-      // refreshTable()
-      // refreshBreadcrumbs()
       console.log('Navigated to ' + subject)
 
       // window.location.href = destination.uri // beware will cause jumo if diff origin
@@ -208,7 +207,7 @@ export default {
         UI.widgets.complain({ dom, div }, `folderTable: Error deleting ${res}: ${err}`)
       }
       await kb.fetcher.load(subject, { force: true, clearPreviousData: true })
-      refreshTable()
+      fileTable.refresh()
     }
 
     async function openToolBar (object, row) {
@@ -252,24 +251,32 @@ export default {
       return row
     }
 
-    async function refreshTable () {
-      var objs = kb.each(subject, ns.ldp('contains')).filter(noHiddenFiles)
-      console.log('   ' + objs.length + ' contained things in ' + subject)
-      objs = objs.map(obj => [UI.utils.label(obj).toLowerCase(), obj])
-      objs.sort() // Sort by label case-insensitive
-      objs = objs.map(pair => pair[1])
-      UI.utils.syncTableToArrayReOrdered(mainTable, objs, renderOneRow)
-    }
-
     function renderFileTable () {
-      const table = div.appendChild(dom.createElement('table'))
+      async function refreshTable () {
+        var objs = kb.each(subject, ns.ldp('contains')).filter(noHiddenFiles)
+        console.log('   ' + objs.length + ' contained things in ' + subject)
+        objs = objs.map(obj => [UI.utils.label(obj).toLowerCase(), obj])
+        objs.sort() // Sort by label case-insensitive
+        objs = objs.map(pair => pair[1])
+        UI.utils.syncTableToArrayReOrdered(table, objs, renderOneRow)
+      }
+      const table = dom.createElement('table')
       table.style = 'margin: 1em; width: 100%; font-size: 100%; ' // @@ compensate for 80% in tabbedtab.css
       table.refresh = refreshTable
-      mainTable = table
       refreshTable()
+      return table
     }
 
     // @@ add response to external login
+    function isThisAPackage (subject) {
+      var thisDir = subject.uri.endsWith('/') ? subject.uri : subject.uri + '/'
+      const indexThing = kb.sym(thisDir + 'index.ttl#this')
+      const isPackage = kb.holds(subject, ns.ldp('contains'), indexThing.doc())
+      if (isPackage) {
+        console.log('Package: View of folder with be view of indexThing. ' + indexThing)
+      }
+      return isPackage
+    }
 
     // Is this directory actually a Package? If so display root object, not files
     function renderPackageIfPackage (subject) {
@@ -279,39 +286,57 @@ export default {
         console.log(
           'View of folder with be view of indexThing. Loading ' + indexThing
         )
-        const packageDiv = div.appendChild(dom.createElement('div'))
+        const packageDiv = dom.createElement('div')
         packageDiv.style.cssText = 'border-top: 0.2em solid #ccc;' // Separate folder views above from package views below
         kb.fetcher.load(indexThing.doc()).then(function () {
-          mainTable = packageDiv.appendChild(dom.createElement('table'))
+          var packageTable = packageDiv.appendChild(dom.createElement('table'))
           context
             .getOutliner(dom)
-            .GotoSubject(indexThing, true, undefined, false, undefined, mainTable)
+            .GotoSubject(indexThing, true, undefined, false, undefined, packageTable)
         })
-        return div
+        return packageDiv
       }
       return null
     }
 
+    // Refresh the whole view
     function refresh () {
-      const packageDiv = renderPackageIfPackage(subject)
-      if (packageDiv) {
-        if (mainTable) {
-          div.removeChild(mainTable)
-          mainTable = null
+      if (isThisAPackage(subject)) {
+        if (fileTable) {
+          div.removeChild(fileTable)
+          fileTable = null
         }
-        div.appendChild(packageDiv)
-      } else {
-        if (mainTable) {
-          mainTable.refresh()
+        if (packageDiv && packageDiv.subject.sameTerm(subject)) {
+          console.log('package unchanged')
         } else {
-          renderFileTable(subject)
+          if (packageDiv) {
+            div.removeChild(packageDiv)
+          }
+          packageDiv = renderPackageIfPackage(subject)
+          packageDiv.subject = subject
+          div.appendChild(packageDiv)
+        }
+      } else { // this is not a package
+        if (packageDiv) {
+          div.removeChild(packageDiv)
+          packageDiv = null
+        }
+        if (fileTable) {
+          fileTable.refresh()
+        } else {
+          fileTable = renderFileTable(subject)
+          div.appendChild(fileTable)
         }
       }
-      refreshBreadcrumbs()
 
-      div.removeChild(creationDiv)
-      creationDiv = renderCreationControl(subject)
-      div.appendChild(creationDiv) // add on the end
+      refreshBreadcrumbs()
+      // The creation div is bound to the subject, so need new one of subject changed
+      if (!creationDiv.subject.sameTerm(subject)) {
+        div.removeChild(creationDiv)
+        creationDiv = renderCreationControl(subject)
+        div.appendChild(creationDiv) // add on the end
+        creationDiv.subject = subject
+      }
     }
 
     // Allow user to create new things within the folder
@@ -325,7 +350,7 @@ export default {
         statusArea: creationDiv,
         me: me
       }
-      creationContext.refreshTarget = mainTable
+      creationContext.refreshTarget = fileTable
       UI.authn
         .filterAvailablePanes(context.session.paneRegistry.list)
         .then(function (relevantPanes) {
@@ -366,7 +391,7 @@ export default {
           kb.add(subject, ns.ldp('contains'), destination, subject.doc())
           kb.add(destination, ns.dct('modified'), new Date(), subject.doc()) // cheat
           kb.add(destination, ns.stat('size'), file.size, subject.doc()) // cheat
-          mainTable.refresh()
+          fileTable.refresh()
         }
       )
     }
@@ -374,16 +399,15 @@ export default {
     */
     var div = dom.createElement('div')
     loadActionDocumentIfAny()
-    var mainTable = null // Holds the file list when the thing is a file list
+    var fileTable = null // Holds the file list when the thing is a file list
+    var packageDiv = null // Alternative to FileTable:  Holds a package
     const statusArea = div.appendChild(dom.createElement('div'))
     const userContext = { dom, div, statusArea }
     var creationDiv = renderCreationControl(subject)
+    creationDiv.subject = subject
     div.appendChild(creationDiv)
+    div.style = style.paneDivStyle
 
-    div.setAttribute(
-      'style',
-      'border-top: solid 1px #777; border-bottom: solid 1px #777; margin-top: 0.5em; margin-bottom: 0.5em ' // @@ to style.js
-    )
     // Add a breadcrumbs line
     const breadcrumbsNav = div.appendChild(dom.createElement('nav')) // div? nav?
     var breadcrumbs = breadcrumbsNav.appendChild(dom.createElement('ol')) // div? nav?
