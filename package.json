@@ -20,7 +20,7 @@
     "test": "npm run lint",
     "prepublishOnly": "npm test",
     "postpublish": "git push origin master --follow-tags",
-    "watch": "webpack --watch",
+    "watch-app": "webpack --watch",
     "start": "webpack-dev-server --open"
   },
   "repository": {
