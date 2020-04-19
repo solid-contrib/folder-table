@@ -76,7 +76,7 @@ export function sentimentStrip (target, doc) {
   const sentiments = actions.map(a => kb.any(a, ns.rdf('type'), null, doc))
   sentiments.sort()
   const strings = sentiments.map(x => emoji[x] || '')
-  return dom.createTextNode(strings.join(' '))
+  return dom.createTextNode('  ' + strings.join(' '))
 }
 /**
  * Create strip of sentiments expressed, with hyperlinks
