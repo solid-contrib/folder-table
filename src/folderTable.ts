@@ -407,7 +407,8 @@ export default {
         .then(function (relevantPanes) {
           UI.create.newThingUI(creationContext, context, relevantPanes); // Have to pass panes down  newUI
 
-          UI.aclControl.preventBrowserDropEvents(dom);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (UI.aclControl as any).preventBrowserDropEvents(dom);
 
           const explictDropIcon = false;
           let target;
