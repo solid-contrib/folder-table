@@ -1,3 +1,6 @@
+/* eslint-disable no-var */
+/* eslint-disable @typescript-eslint/no-use-before-define */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /**
  * Tools for doing things with a target: a message, file, ... anything
@@ -25,7 +28,7 @@ const UI = {
   widgets: require('../widgets')
 }
 */
-import bookmarks from "./bookmarks";
+import * as bookmarks from "./bookmarks";
 
 const dom = window.document;
 
@@ -110,7 +113,8 @@ export function sentimentStripLinked(target, doc) {
     });
   }
   refresh();
-  strip.refresh = refresh;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (strip as any).refresh = refresh;
   return strip;
 }
 
@@ -225,7 +229,8 @@ export function actionToolbar(target, messageRow, userContext) {
           data.items.add(target.uri, "text/plain");
           data.items.add(target.uri, "text/uri-list");
           try {
-            await navigator.clipboard.write(data);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (navigator.clipboard as any).write(data);
           } catch (err) {
             UI.widgets.complain(
               userContext,
@@ -252,10 +257,13 @@ export function actionToolbar(target, messageRow, userContext) {
   } // if mine
 
   // Things anyone can do if they have a bookmark list
-
-  bookmarks.renderBookmarksButton(userContext).then((bookmarkButton) => {
-    if (bookmarkButton) div.appendChild(bookmarkButton);
-  });
+  // FIXME what should be the target in the call to
+  // renderBookmarksButton? Is undefined ok?
+  bookmarks
+    .renderBookmarksButton(userContext, undefined)
+    .then((bookmarkButton) => {
+      if (bookmarkButton) div.appendChild(bookmarkButton);
+    });
 
   // THUMBS_UP_ICON
   // https://schema.org/AgreeAction

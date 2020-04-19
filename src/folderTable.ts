@@ -1,3 +1,4 @@
+/* eslint-disable no-var */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /*   Folder pane - Table version
@@ -264,6 +265,7 @@ export default {
           dom,
           UI.icons.iconBase + "noun_243787.svg",
           "More",
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           async (_event) => openToolBar(object, row)
         )
       );
@@ -396,6 +398,7 @@ export default {
         statusArea: creationDiv,
         me: me,
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (creationContext as any).refreshTarget = fileTable;
       UI.authn
         // FIXME:
