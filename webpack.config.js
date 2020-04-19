@@ -1,10 +1,24 @@
+/* eslint-disable no-undef */
 
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const path = require('path')
 
 module.exports = [{
   mode: 'development',
-  entry: './src/index.js',
+  module: {
+    rules: [
+      {
+        test: /\.ts?$/,
+        loader: "babel-loader"
+      },
+      {
+        test: /\.js$/,
+        use: ["source-map-loader"],
+        enforce: "pre"
+      }
+    ]
+  },
+  entry: './src/index.ts',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'foldertable.bundle.js'
@@ -12,6 +26,9 @@ module.exports = [{
   plugins: [
     new HtmlWebpackPlugin({ template: './src/index.html' })
   ],
+  resolve: {
+    extensions: [".ts", ".js", ".json"]
+  },
   externals: {
     fs: 'null',
     'node-fetch': 'fetch',
@@ -28,10 +45,27 @@ module.exports = [{
 },
 {
   mode: 'development',
-  entry: './src/folderTable.js',
+  entry: './src/folderTable.ts',
+  module: {
+    rules: [
+      {
+        test: /\.ts?$/,
+        loader: "babel-loader"
+      },
+      {
+        test: /\.js$/,
+        use: ["source-map-loader"],
+        enforce: "pre"
+      }
+    ]
+  },
+
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'folderTable.js'
+    filename: 'main.js'
+  },
+  resolve: {
+    extensions: [".ts", ".js", ".json"]
   },
   externals: {
     fs: 'null',
