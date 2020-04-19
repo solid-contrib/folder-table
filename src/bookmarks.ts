@@ -1,13 +1,12 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 /**
  * Functions related to chat and bookmarks
  * @packageDocumentation
  */
 
-/* global alert confirm */
-
 // import * as debug from '../debug'
 import * as UI from "solid-ui";
-const debug = UI.debug;
+import * as debug from "./debug";
 
 /* Use when part of solid-ui
 const UI = {
@@ -120,7 +119,8 @@ export async function findBookmarkDocument(userContext) {
         debug.log("Creating new bookmark file " + newBookmarkFile);
         await createIfNotExists(newBookmarkFile);
       } catch (e) {
-        alert.error("Can't make fresh bookmark file:" + e);
+        // alert.error("Can't make fresh bookmark file:" + e);
+        alert("Can't make fresh bookmark file:" + e);
         return userContext;
       }
       await UI.authn.registerInTypeIndex(
@@ -174,7 +174,8 @@ async function addBookmark(context, target) {
     await updatePromise([], ins); // 20190118A
   } catch (e) {
     const msg = "Making bookmark: " + e;
-    alert.error(msg);
+    // alert.error(msg);
+    alert(msg);
     return null;
   }
   return bookmark;

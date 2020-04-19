@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+// eslint-disable-next-line no-undef
 const FolderTable = require("./folderTable").default;
-const $rdf = require("rdflib");
-const UI = require("solid-ui");
-const SolidAuth = require("solid-auth-client");
+import $rdf from "rdflib";
+import UI from "solid-ui";
+import SolidAuth from "solid-auth-client";
 
 async function appendFolderTable(dom, uri) {
   const subject = $rdf.sym(uri);
@@ -27,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Set up the view for the subject indicated in the fragment of the window's URL
   const uri = decodeURIComponent(window.location.hash.substr(1));
   if (uri.length === 0) {
-    window.location =
+    window.location.href =
       "?#" + encodeURIComponent("https://michielbdejong.inrupt.net/public/");
   }
   appendFolderTable(document, uri);
@@ -49,11 +52,11 @@ window.onload = () => {
     }
   });
 };
-window.logout = () => {
+(window as any).logout = () => {
   SolidAuth.logout();
-  window.location = "";
+  window.location.href = "";
 };
-window.popupLogin = async function () {
+(window as any).popupLogin = async function () {
   let session = await SolidAuth.currentSession();
   const popupUri = "https://solid.community/common/popup.html";
   if (!session) {

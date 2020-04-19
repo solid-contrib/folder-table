@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 /*   Folder pane - Table version
  **
  **  This folder table pane lists the members of a folder
  */
 
 import * as UI from "solid-ui";
-import { sentimentStrip, sentimentStripLinked, actionToolbar } from "./toolbar";
+import { sentimentStrip, actionToolbar } from "./toolbar";
 
 const ns = UI.ns;
 const PANE_NAME = "folderTable";
@@ -117,7 +119,7 @@ export default {
       const breadcrumbStyle =
         "display: inline; margin: 0.4em; padding: 0.2em; border-radius: 0.2em; background-color: #ddd;";
       ele.style = breadcrumbStyle;
-      ele.addEventListener("click", async (_event) => navigateTo(folder));
+      ele.addEventListener("click", async (event) => navigateTo(folder, event));
       ele.textContent = folderName(folder);
       ele.subject = folder;
       UI.widgets.makeDraggable(ele, folder); // handy to be able to drag them
@@ -246,8 +248,10 @@ export default {
       // row.style.position = 'relative' // to make an anchor - no doesn't work
       const cell = row.children[1];
       cell.style.position = "relative";
-      toolbar.style =
-        "position: absolute; top: 2em; left: 0; height:4em; width: 30em; border: 0 0.1 0.1 0.1 solid grey; border-radius: 0.1em; background-color: #eef; ";
+      toolbar.setAttribute(
+        "style",
+        "position: absolute; top: 2em; left: 0; height:4em; width: 30em; border: 0 0.1 0.1 0.1 solid grey; border-radius: 0.1em; background-color: #eef; "
+      );
       toolbar.style.filter = "drop-shadow(30px 10px 4px #4444dd)";
       cell.appendChild(toolbar);
     }
@@ -366,7 +370,7 @@ export default {
         if (fileTable) {
           fileTable.refresh();
         } else {
-          fileTable = renderFileTable(subject);
+          fileTable = renderFileTable(/* subject */);
           div.appendChild(fileTable);
         }
       }
@@ -392,7 +396,7 @@ export default {
         statusArea: creationDiv,
         me: me,
       };
-      creationContext.refreshTarget = fileTable;
+      (creationContext as any).refreshTarget = fileTable;
       UI.authn
         // FIXME:
         // .filterAvailablePanes(context.session.paneRegistry.list)

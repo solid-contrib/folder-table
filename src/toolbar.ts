@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 /**
  * Tools for doing things with a target: a message, file, ... anything
  * Let us be creative here.  Allow all sorts of things to
@@ -9,7 +10,7 @@
  * @packageDocumentation
  */
 
-const UI = require("solid-ui");
+import UI from "solid-ui";
 /*
 const UI = {
   authn: require('../authn/authn'),
@@ -24,7 +25,7 @@ const UI = {
   widgets: require('../widgets')
 }
 */
-const bookmarks = require("./bookmarks");
+import bookmarks from "./bookmarks";
 
 const dom = window.document;
 
