@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-undef */
 /**
  * npm does not allow you to publish a package with the same version multiple times.
@@ -6,11 +7,6 @@
  * To achieve this, we append `build<build_number>` to the version number.
  * The actual release version can eventually be published without the suffix.
  */
-
-import { writeFileSync } from "fs";
-import { resolve } from "path";
-
-import packageJson, { version } from "../package.json";
 
 if (
   !process.env.TRAVIS_BUILD_NUMBER ||
@@ -22,8 +18,12 @@ if (
   process.exit(1);
 }
 
-packageJson.version = `${version}build${process.env.TRAVIS_BUILD_NUMBER}`;
-writeFileSync(
-  resolve(__dirname, "../package.json"),
+const fs = require("fs");
+const path = require("path");
+
+const packageJson = require("../package.json");
+packageJson.version = `${packageJson.version}build${process.env.TRAVIS_BUILD_NUMBER}`;
+fs.writeFileSync(
+  path.resolve(__dirname, "../package.json"),
   JSON.stringify(packageJson)
 );
