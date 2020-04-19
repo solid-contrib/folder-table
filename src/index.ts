@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 // eslint-disable-next-line no-undef
 const FolderTable = require("./folderTable").default;
-import $rdf from "rdflib";
+// eslint-disable-next-line @typescript-eslint/no-var-requires, no-undef
+const $rdf = require("rdflib");
 import UI from "solid-ui";
 import SolidAuth from "solid-auth-client";
 
