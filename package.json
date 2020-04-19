@@ -2,7 +2,7 @@
   "name": "folder-table",
   "version": "1.0.1",
   "description": "Solid-compatible Panes: File table",
-  "main": "./dist/main.js",
+  "main": "./dist/folderTable.js",
   "files": [
     "src",
     "lib"
