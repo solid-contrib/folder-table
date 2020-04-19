@@ -104,7 +104,7 @@ export default {
       }
     }
     function folderName(folder) {
-      var path = folder.uri.split("/").slice(3); // skip http, gap, domain
+      let path = folder.uri.split("/").slice(3); // skip http, gap, domain
       // if (path.length === 0) return '/'
       path = path.reverse();
       return decodeURIComponent(path[0] || path[1] || " / ");
@@ -125,9 +125,9 @@ export default {
     }
 
     function refreshBreadcrumbs() {
-      var ancestors = [];
+      const ancestors = [];
       const uri = subject.uri;
-      var p = uri.indexOf("//") + 2;
+      let p = uri.indexOf("//") + 2;
       p = uri.indexOf("/", p);
       for (p; p > 0; p = uri.indexOf("/", p + 1)) {
         ancestors.push(kb.sym(subject.uri.slice(0, p + 1)));
@@ -136,7 +136,7 @@ export default {
       // UI.utils.syncTableToArrayReOrdered(breadcrumbs, ancestors, renderBreadcrumb)
       UI.utils.syncTableToArray(breadcrumbs, ancestors, renderBreadcrumb);
       const crumbs = breadcrumbs.children;
-      for (var i = 0; i < crumbs.length; i++) {
+      for (let i = 0; i < crumbs.length; i++) {
         if (i !== crumbs.length - 1) {
           crumbs[i].style.backgroundColor = "#ddd";
           crumbs[i].style.fontWeight = "normal";
@@ -169,7 +169,7 @@ export default {
 
     function renderTypeCell(object) {
       // @@ Make icon from resource type
-      var iconURI;
+      let iconURI;
       if (kb.holds(object, ns.rdf("type"), ns.ldp("Container"))) {
         iconURI = UI.icons.iconBase + "noun_973694_expanded.svg";
       } else {
@@ -233,7 +233,7 @@ export default {
 
     async function openToolBar(object, row) {
       // Put metadata in one file for the whole folder for now
-      var toolbarContext = {
+      const toolbarContext = {
         deleteFunction: () => deleteResource(object),
         noun: fileOrFolder(object),
         actionDoc: getActionDoc(subject),
@@ -279,7 +279,7 @@ export default {
 
     function renderFileTable() {
       async function refreshTable() {
-        var objs = kb.each(subject, ns.ldp("contains")).filter(noHiddenFiles);
+        let objs = kb.each(subject, ns.ldp("contains")).filter(noHiddenFiles);
         console.log("   " + objs.length + " contained things in " + subject);
         objs = objs.map((obj) => [UI.utils.label(obj).toLowerCase(), obj]);
         objs.sort(); // Sort by label case-insensitive
@@ -295,7 +295,9 @@ export default {
 
     // @@ add response to external login
     function isThisAPackage(subject) {
-      var thisDir = subject.uri.endsWith("/") ? subject.uri : subject.uri + "/";
+      const thisDir = subject.uri.endsWith("/")
+        ? subject.uri
+        : subject.uri + "/";
       const indexThing = kb.sym(thisDir + "index.ttl#this");
       const isPackage = kb.holds(subject, ns.ldp("contains"), indexThing.doc());
       if (isPackage) {
@@ -308,7 +310,9 @@ export default {
 
     // Is this directory actually a Package? If so display root object, not files
     function renderPackageIfPackage(subject) {
-      var thisDir = subject.uri.endsWith("/") ? subject.uri : subject.uri + "/";
+      const thisDir = subject.uri.endsWith("/")
+        ? subject.uri
+        : subject.uri + "/";
       const indexThing = kb.sym(thisDir + "index.ttl#this");
       if (kb.holds(subject, ns.ldp("contains"), indexThing.doc())) {
         console.log(
@@ -317,7 +321,9 @@ export default {
         const packageDiv = dom.createElement("div");
         packageDiv.style.cssText = "border-top: 0.2em solid #ccc;"; // Separate folder views above from package views below
         kb.fetcher.load(indexThing.doc()).then(function () {
-          var packageTable = packageDiv.appendChild(dom.createElement("table"));
+          const packageTable = packageDiv.appendChild(
+            dom.createElement("table")
+          );
           context
             .getOutliner(dom)
             .GotoSubject(
@@ -377,9 +383,9 @@ export default {
 
     // Allow user to create new things within the folder
     function renderCreationControl(subject) {
-      var creationDiv = dom.createElement("div");
-      var me = UI.authn.currentUser();
-      var creationContext = {
+      const creationDiv = dom.createElement("div");
+      const me = UI.authn.currentUser();
+      const creationContext = {
         folder: subject,
         div: creationDiv,
         dom: dom,
@@ -397,7 +403,7 @@ export default {
           UI.aclControl.preventBrowserDropEvents(dom);
 
           const explictDropIcon = false;
-          var target;
+          let target;
           if (explictDropIcon) {
             const iconStyleFound = creationDiv.firstChild.style.cssText;
             target = creationDiv.insertBefore(

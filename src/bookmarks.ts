@@ -113,7 +113,7 @@ export async function findBookmarkDocument(userContext) {
   } else {
     if (userContext.publicProfile) {
       // publicProfile or preferencesFile
-      var newBookmarkFile = $rdf.sym(
+      const newBookmarkFile = $rdf.sym(
         userContext.publicProfile.dir().uri + fileTail
       );
       try {
@@ -153,11 +153,11 @@ async function addBookmark(context, target) {
    bookm:recalls wiki:Heron;
    n0:maker c:me.
   */
-  var title = "";
-  var me = UI.authn.currentUser(); // If already logged on
+  let title = "";
+  const me = UI.authn.currentUser(); // If already logged on
   if (!me) throw new Error("Must be logged on to add Bookmark");
 
-  var author = kb.any(target, ns.foaf("maker"));
+  const author = kb.any(target, ns.foaf("maker"));
   title =
     label(author) + ": " + kb.anyValue(target, ns.sioc("content")).slice(0, 80); // @@ add chat title too?
   const bookmarkDoc = context.bookmarkDocument;
@@ -221,7 +221,7 @@ export async function renderBookmarksButton(userContext, target) {
     if (bookmarked) bookmarkButton.style.backgroundColor = "yellow";
   }
 
-  var bookmarkButton;
+  let bookmarkButton;
   if (userContext.bookmarkDocument) {
     bookmarkButton = UI.widgets.button(
       dom,
