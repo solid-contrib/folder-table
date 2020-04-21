@@ -1,4 +1,4 @@
-const FolderTable = require('./folderTable.js').default
+const FolderTable = require('./folderTable').default
 const $rdf = require('rdflib')
 const UI = require('solid-ui')
 const SolidAuth = require('solid-auth-client')
