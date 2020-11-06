@@ -212,15 +212,17 @@ export function actionToolbar (target, messageRow, userContext) { // was: messag
 
   /// / Button: Copy URI of target to clipbaord
   if (target.uri) { // Ie not blank nodes or numbers
-    div.appendChild(UI.widgets.button(dom, UI.icons.iconBase + COPY_ICON, 'copy', async _event => {
+    div.appendChild(UI.widgets.button(dom, UI.icons.iconBase + COPY_ICON, 'copy', async event => {
       const data = new DataTransfer()
       data.items.add(target.uri, 'text/plain')
       data.items.add(target.uri, 'text/uri-list')
       try {
-        await navigator.clipboard.write(data)
+        await navigator.clipboard.writeText(target.uri) // write(data)  fails with Chrome
       } catch (err) {
         UI.widgets.complain(userContext, 'Error copyimg to clipboard: ' + err)
+        return
       }
+      event.target.style.backGroundColour = '#eeffee' // visual confirmation
     }))
   }
 

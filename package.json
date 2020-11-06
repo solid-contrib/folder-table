@@ -33,6 +33,8 @@
   },
   "homepage": "https://github.com/solid/folder-table",
   "dependencies": {
+    "pane-registry": "^2.0.1",
+    "rdflib": "^1.1.0",
     "solid-ui": "^2.0.1"
   },
   "devDependencies": {
