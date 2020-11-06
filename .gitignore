@@ -5,6 +5,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Webpack
+dist
+
+# Babel
+lib
+
 # Runtime data
 pids
 *.pid
