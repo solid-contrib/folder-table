@@ -1,6 +1,6 @@
 # [WiP] Solid Pane Folder-Table
 
-**Note** : This is a work in progress started some time ago by @timbl and was last worked on by @michielbdejong and @alvetens two years ago. In this version, I (@jeff-zucker) added a pod-picker and login using the latest auth .
+**Note** : This is a work in progress started some time ago by @timbl and was last worked on by @michielbdejong and @aveltens two years ago. In this version, I (@jeff-zucker) added a pod-picker and login using the latest auth .
 
 You can try this out as a web app on <a href="https://jeff-zucker.solidcommunity.net:8443/folder-table/">the NSS test server</a>. You can also install and use locally, see below.
 
