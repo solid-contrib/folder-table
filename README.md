@@ -26,10 +26,12 @@ The toolbar allows logged-in individuals to perform various extensible social ac
 
 ## Installation
 
+```
 git clone -b auth-upgrade https://github.com/solid/folder-table.git
 cd folder-table
 npm ci
 npm run build
+```
 
 ## usage
 
