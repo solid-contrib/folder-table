@@ -13,7 +13,6 @@
  * @packageDocumentation
  */
 
-import UI from "solid-ui";
 /*
 const UI = {
   authn: require('../authn/authn'),
@@ -114,7 +113,8 @@ export function sentimentStripLinked(target, doc) {
   }
   refresh();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (strip as any).refresh = refresh;
+  //jz  (strip as any).refresh = refresh;
+  strip.refresh - refresh;
   return strip;
 }
 
@@ -230,7 +230,8 @@ export function actionToolbar(target, messageRow, userContext) {
           data.items.add(target.uri, "text/uri-list");
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (navigator.clipboard as any).write(data);
+            //jz           await (navigator.clipboard as any).write(data);
+            await navigator.clipboard.write(data);
           } catch (err) {
             UI.widgets.complain(
               userContext,

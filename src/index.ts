@@ -3,9 +3,7 @@
 // eslint-disable-next-line no-undef
 const FolderTable = require("./folderTable").default;
 // eslint-disable-next-line @typescript-eslint/no-var-requires, no-undef
-const $rdf = require("rdflib");
-import UI from "solid-ui";
-import SolidAuth from "solid-auth-client";
+const $rdf = UI.rdf;
 
 async function appendFolderTable(dom, uri) {
   const subject = $rdf.sym(uri);
@@ -24,43 +22,89 @@ async function appendFolderTable(dom, uri) {
   const options = {};
 
   const paneDiv = FolderTable.render(subject, context, options);
-  dom.body.appendChild(paneDiv);
+  const display = dom.getElementById("folderTableArea");
+  display.innerHTML = "";
+  display.appendChild(paneDiv);
 }
-
 document.addEventListener("DOMContentLoaded", function () {
-  // Set up the view for the subject indicated in the fragment of the window's URL
-  const uri = decodeURIComponent(window.location.hash.substr(1));
-  if (uri.length === 0) {
-    window.location.href =
-      "?#" + encodeURIComponent("https://michielbdejong.inrupt.net/public/");
-  }
-  appendFolderTable(document, uri);
-});
+  const UI = panes.UI;
+  const $rdf = UI.rdf;
+  const dom = document;
+  $rdf.Fetcher.crossSiteProxyTemplate = self.origin + "/xss?uri={uri}";
+  var uri = window.location.href;
+  window.document.title = "Data browser: " + uri;
+  var kb = UI.store;
+  //  var outliner = panes.getOutliner(dom)
 
-window.onload = () => {
-  console.log("document ready");
-  SolidAuth.trackSession((session) => {
-    if (!session) {
-      console.log("The user is not logged in");
-      document.getElementById("loginBanner").innerHTML =
-        '<button onclick="popupLogin()">Log in</button>';
+  async function go(event) {
+    let uri = $rdf.uri.join(uriField.value, window.location.href);
+    console.log("User field " + uriField.value);
+    console.log("User requests " + uri);
+
+    const params = new URLSearchParams(location.search);
+    params.set("uri", uri);
+    window.history.replaceState({}, "", `${location.pathname}?${params}`);
+
+    var subject = kb.sym(uri);
+    await UI.authn.checkUser();
+    appendFolderTable(dom, uri);
+    // outliner.GotoSubject(subject, true, undefined, true, undefined);
+    mungeLoginArea();
+  }
+
+  const uriField = dom.getElementById("uriField");
+  const goButton = dom.getElementById("goButton");
+  const loginButtonArea = document.getElementById("loginButtonArea");
+  const webIdArea = dom.getElementById("webId");
+  const banner = dom.getElementById("inputArea");
+
+  uriField.addEventListener(
+    "keyup",
+    function (e) {
+      if (e.keyCode === 13) {
+        go(e);
+      }
+    },
+    false
+  );
+
+  goButton.addEventListener("click", go, false);
+  let initial = new URLSearchParams(self.location.search).get("uri");
+  if (initial) {
+    uriField.value = initial;
+    go();
+  } else {
+    console.log("ready for user input");
+  }
+  async function mungeLoginArea() {
+    loginButtonArea.innerHTML = "";
+    if (uriField.value)
+      loginButtonArea.appendChild(UI.authn.loginStatusBox(document, null, {}));
+    if (UI.authn.authSession && UI.authn.authSession.info.isLoggedIn) {
+      const logoutButton = loginButtonArea.querySelector("input");
+      logoutButton.value = "Logout";
+      let displayId = `&lt;${UI.authn.authSession.info.webId}>`;
+      webIdArea.innerHTML = displayId;
+      banner.style.backgroundColor = "#bbccbb";
     } else {
-      console.log(`Logged in as ${session.webId}`);
-
-      document.getElementById(
-        "loginBanner"
-      ).innerHTML = `Logged in as ${session.webId} <button onclick="logout()">Log out</button>`;
+      banner.style.backgroundColor = "#ccbbbb";
     }
-  });
-};
-(window as any).logout = () => {
-  SolidAuth.logout();
-  window.location.href = "";
-};
-(window as any).popupLogin = async function () {
-  let session = await SolidAuth.currentSession();
-  const popupUri = "https://solid.community/common/popup.html";
-  if (!session) {
-    session = await SolidAuth.popupLogin({ popupUri });
+    loginButtonArea.style.display = "inline-block";
   }
-};
+  if (UI.authn.authSession) {
+    UI.authn.authSession.onLogin(() => {
+      mungeLoginArea();
+      go();
+    });
+    UI.authn.authSession.onLogout(() => {
+      mungeLoginArea();
+      webIdArea.innerHTML = "public user";
+      go();
+    });
+    UI.authn.authSession.onSessionRestore((url) => {
+      mungeLoginArea();
+      go();
+    });
+  }
+  mungeLoginArea();
+});

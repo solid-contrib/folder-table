@@ -4,8 +4,6 @@
  * @packageDocumentation
  */
 
-// import * as debug from '../debug'
-import * as UI from "solid-ui";
 import * as debug from "./debug";
 
 /* Use when part of solid-ui

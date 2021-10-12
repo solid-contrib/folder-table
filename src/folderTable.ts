@@ -5,8 +5,6 @@
  **
  **  This folder table pane lists the members of a folder
  */
-
-import * as UI from "solid-ui";
 import { sentimentStrip, actionToolbar } from "./toolbar";
 
 const ns = UI.ns;
@@ -98,6 +96,7 @@ export default {
     }
 
     async function loadActionDocumentIfAny() {
+      /* jz removed temporarily, doesn't work
       try {
         await kb.fetcher.load(getActionDoc(subject));
       } catch (error) {
@@ -105,6 +104,7 @@ export default {
           UI.widgets.complain(userContext, "can't read action data: " + error);
         }
       }
+*/
     }
     function folderName(folder) {
       let path = folder.uri.split("/").slice(3); // skip http, gap, domain
@@ -290,7 +290,9 @@ export default {
         objs = objs.map((obj) => [UI.utils.label(obj).toLowerCase(), obj]);
         objs.sort(); // Sort by label case-insensitive
         objs = objs.map((pair) => pair[1]);
-        UI.utils.syncTableToArrayReOrdered(table, objs, renderOneRow);
+        // FIXME:
+        // UI.utils.syncTableToArrayReOrdered(breadcrumbs, ancestors, renderBreadcrumb)
+        UI.utils.syncTableToArray(table, objs, renderOneRow);
       }
       const table = dom.createElement("table");
       table.style = "margin: 1em; width: 100%; font-size: 100%; "; // @@ compensate for 80% in tabbedtab.css
@@ -379,14 +381,15 @@ export default {
 
       refreshBreadcrumbs();
       // The creation div is bound to the subject, so need new one of subject changed
+      /* jz temporarily removed - doesn't work
       if (!creationDiv.subject.sameTerm(subject)) {
         div.removeChild(creationDiv);
         creationDiv = renderCreationControl(subject);
         div.appendChild(creationDiv); // add on the end
         creationDiv.subject = subject;
       }
+*/
     }
-
     // Allow user to create new things within the folder
     function renderCreationControl(subject) {
       const creationDiv = dom.createElement("div");
@@ -399,7 +402,8 @@ export default {
         me: me,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (creationContext as any).refreshTarget = fileTable;
+      //jz      (creationContext as any).refreshTarget = fileTable;
+      creationContext.refreshTarget = fileTable;
       UI.authn
         // FIXME:
         // .filterAvailablePanes(context.session.paneRegistry.list)
@@ -408,7 +412,8 @@ export default {
           UI.create.newThingUI(creationContext, context, relevantPanes); // Have to pass panes down  newUI
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (UI.aclControl as any).preventBrowserDropEvents(dom);
+          //jz          (UI.aclControl as any).preventBrowserDropEvents(dom);
+          UI.aclControl.preventBrowserDropEvents(dom);
 
           const explictDropIcon = false;
           let target;
@@ -455,9 +460,12 @@ export default {
     var packageDiv = null; // Alternative to FileTable:  Holds a package
     const statusArea = div.appendChild(dom.createElement("div"));
     const userContext = { dom, div, statusArea };
+
     var creationDiv = renderCreationControl(subject);
     creationDiv.subject = subject;
+    /* jz temporarily removed - doesn't work
     div.appendChild(creationDiv);
+*/
     div.style = style.paneDivStyle;
 
     // Add a breadcrumbs line

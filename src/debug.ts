@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/*
 export function log(...args: any[]): void {
   // eslint-disable-next-line no-console
   console.log(...args);
@@ -18,3 +19,4 @@ export function trace(...args: any[]): void {
   // eslint-disable-next-line no-console
   console.trace(...args);
 }
+*/

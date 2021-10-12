@@ -1,29 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html id="docHTML">
   <head>
-    <meta charset="utf-8" />
-    <title>The FolderTable pane as a stand-alone app</title>
-    <style>
-      body {
-        margin: 10%;
-      }
-      input {
-        background-color: #eef;
-        padding: 0.5em;
-        border: 0.5em solid white;
-        font-size: 120%;
-      }
-    </style>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type" />
+    <link
+      type="text/css"
+      rel="stylesheet"
+      href="../node_modules/mashlib/dist/mash.css"
+    />
+    <script
+      type="text/javascript"
+      src="../node_modules/mashlib/dist/mashlib.js"
+    ></script>
   </head>
   <body>
-    <h1>The FolderTable pane as a stand-alone app</h1>
-    <div id="loginBanner"></div>
-    <p>
-      Welcome.
-    </p>
-
-    <!-- div from meetingPane.render,
-      which will contain the result of UI.tabs.tabWidget,
-      will be inserted here -->
+    <div id="inputArea">
+      <div style="margin-bottom: 0.6em;">
+        The SolidOS FolderTable Pane as a stand-alone app
+      </div>
+      <div style="margin-left: 1em;">
+        Viewing
+        <input
+          id="uriField"
+          type="text"
+          placeholder="enter a pod address e.g. https://you.solidcommunity.net/"
+        />
+        <input type="button" id="goButton" value="Go" />
+      </div>
+      <div style="margin-top: 0.5em; margin-left: 1em;">
+        As user <span id="webId">&lt;public user></span>
+        <span id="loginButtonArea"></span>
+      </div>
+    </div>
+    <div id="folderTableArea"></div>
+    <table style="width: 100%;">
+      <tr>
+        <div class="TabulatorOutline" id="DummyUUID" role="main">
+          <table id="outline"></table>
+          <div id="GlobalDashboard"></div>
+        </div>
+      </tr>
+    </table>
+    <style>
+      #inputArea {
+        width: 100%;
+        padding: 0.5em;
+        background-color: #d0d0d0;
+      }
+      #loginButtonArea input {
+        display: inline-block;
+        margin: 0.25em !important;
+        padding: 0.25em !important;
+      }
+      #webId {
+        display: inline-block;
+        padding-top: 0.6em;
+        padding-bottom: 0.6em;
+      }
+      #uriField {
+        min-with: 25em;
+        width: 70%;
+        font-size: 100%;
+        padding: 0.5em;
+        margin-top: 0.6em !important;
+      }
+    </style>
+    <script type="text/javascript" src="./dist/foldertable.bundle.js"></script>
   </body>
 </html>

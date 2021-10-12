@@ -1,6 +1,6 @@
 {
   "name": "folder-table",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Solid-compatible Panes: File table",
   "main": "./dist/folderTable.js",
   "files": [
@@ -39,14 +39,16 @@
     "app",
     "data"
   ],
-  "author": "Tim Berners-Lee <timbl@mit.edu>",
+  "author": [
+    "Tim Berners-Lee <timbl@mit.edu>"
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/solid/folder-table/issues"
   },
   "homepage": "https://github.com/solid/folder-table",
   "dependencies": {
-    "solid-ui": "^2.0.1"
+    "mashlib": "^1.7.5-beta.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.3",
